@@ -1,0 +1,6 @@
+torch
+lighning
+torchvision
+torchmetrics
+matplotlib
+numpy
