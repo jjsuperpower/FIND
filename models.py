@@ -7,7 +7,7 @@ import torchmetrics
 
 from copy import deepcopy
 
-from transforms import Luminance, Hist_EQ, Brightness_Contrast
+from transforms import Luminance, Hist_EQ, Brightness_Contrast, Retinex
 
 class Model_Wrapper(pl.LightningModule):
     def __init__(self, model):
@@ -46,7 +46,7 @@ class Preprocess():
                  dataset_type='imagenet', 
                  split='val', 
                  batch_size=128, 
-                 num_workers=4, 
+                 num_workers=8, 
                  shuffle=False):
         
         self.dataset_path = dataset_path
@@ -81,6 +81,10 @@ class Preprocess():
     
     def hist_eq(self):
         self.current_trans += [Hist_EQ()]
+        return self
+    
+    def retinex(self):
+        self.current_trans += [Retinex()]
         return self
 
     def brightness_contrast(self, brightness, contrast):

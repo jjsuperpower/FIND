@@ -163,15 +163,16 @@ def sample_imgs(x:DataLoader, samples:int|slice = slice(0,1)):
                     return samples_sel
     elif isinstance(samples, slice):
         dataset = x.dataset
-        
+
         step = samples.step
         if step is None:
             step = 1
             
         samples_sel = torch.empty(size=((samples.stop-samples.start)//step, *dataset_size))
-        
+        count = 0
         for idx in range(samples.start, samples.stop, step):
-            samples_sel[idx] = dataset[idx][0]
+            samples_sel[count] = dataset[idx][0]
+            count += 1
         
         return samples_sel
     else:
