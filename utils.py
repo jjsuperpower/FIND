@@ -3,6 +3,9 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
+# set matplotlib to show images with black background
+plt.style.use('dark_background')
+
 class View:
     @staticmethod
     def _torch2np(tensor:torch.Tensor):

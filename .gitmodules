@@ -1,0 +1,3 @@
+[submodule "retinex"]
+	path = retinex
+	url = https://github.com/jjsuperpower/retinex.git
