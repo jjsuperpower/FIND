@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 import torchvision
 from torchvision import transforms
 import cv2
@@ -103,6 +104,32 @@ class Retinex():
     def __repr__(self):
         return self.__class__.__name__ + '()'
     
+class Blur():
+    def __init__(self, kernel_size:int = 3):
+        
+        # raise error if kernel size is not odd
+        if kernel_size % 2 == 0:
+            raise ValueError('kernel size should be odd')
+        
+        self.kernel_size = kernel_size
+        conv2d = nn.Conv2d(1, 1, kernel_size, padding='same', bias=False)
+        conv2d.weight.requires_grad = False
+        conv2d.weight[...] = 1 / (kernel_size**2)
+        self.conv2d = conv2d
+        
+    def __call__(self, img:torch.Tensor):
+        img_type = img.dtype
+        img = img.float()
+        img = img.unsqueeze(0)
+        img = img.swapaxes(0, 1)
+        img = self.conv2d(img)
+        img = img.swapaxes(0, 1)
+        img = img.squeeze(0)
+        return torch.clip(img.type(img_type), 0, 1)
+    
+    def __repr__(self):
+        return self.__class__.__name__ + f'(kernel_size={self.kernel_size})'
+    
 if __name__ == '__main__':
     # check if test image exist
     if not os.path.exists('test.jpg'):
@@ -112,19 +139,23 @@ if __name__ == '__main__':
         
     
     # load image
-    img = np.asarray(Image.open('test.jpg')) / 255
+    img = Image.open('test.jpg')
+    img = transforms.Resize((256, 256))(img)
     img = transforms.ToTensor()(img)
     
-    dark_img = Luminance(1/8)(img)
-    View.compare_color(img, dark_img)
+    # dark_img = Luminance(1/8)(img)
+    # View.compare_color(img, dark_img)
     
-    hist_img = Hist_EQ()(dark_img)
-    View.compare_color(dark_img, hist_img)
+    # hist_img = Hist_EQ()(dark_img)
+    # View.compare_color(dark_img, hist_img)
     
-    low_contrast_img = Brightness_Contrast(-.25, 0.2)(img)
-    View.compare_color(img, low_contrast_img)
+    # low_contrast_img = Brightness_Contrast(-.25, 0.2)(img)
+    # View.compare_color(img, low_contrast_img)
     
-    retinex_img = Retinex()(low_contrast_img)
-    View.compare_color(low_contrast_img, retinex_img)
+    # retinex_img = Retinex()(low_contrast_img)
+    # View.compare_color(low_contrast_img, retinex_img)
+    
+    blur_img = Blur(11)(img)
+    View.compare_color(img, blur_img)
     
     

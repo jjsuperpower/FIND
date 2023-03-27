@@ -7,7 +7,7 @@ import torchmetrics
 
 from copy import deepcopy
 
-from transforms import Luminance, Hist_EQ, Brightness_Contrast, Retinex
+from transforms import Luminance, Hist_EQ, Brightness_Contrast, Retinex, Blur
 
 class Model_Wrapper(pl.LightningModule):
     def __init__(self, model):
@@ -79,16 +79,24 @@ class Preprocess():
         self.current_trans += [Luminance(factor)]
         return self
     
+    def brightness_contrast(self, brightness, contrast):
+        self.current_trans += [Brightness_Contrast(brightness, contrast)]
+        return self
+    
+    def blur(self, kernel_size):
+        self.current_trans += [Blur(kernel_size)]
+        return self
+    
+    def sharpen(self, factor):
+        self.current_trans += [transforms.RandomAdjustSharpness(factor, p=1)]
+        return self
+    
     def hist_eq(self):
         self.current_trans += [Hist_EQ()]
         return self
     
     def retinex(self, *args, **kwargs):
         self.current_trans += [Retinex(*args, **kwargs)]
-        return self
-
-    def brightness_contrast(self, brightness, contrast):
-        self.current_trans += [Brightness_Contrast(brightness, contrast)]
         return self
         
     def get_loader(self):
