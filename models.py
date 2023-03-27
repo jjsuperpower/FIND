@@ -83,8 +83,8 @@ class Preprocess():
         self.current_trans += [Hist_EQ()]
         return self
     
-    def retinex(self):
-        self.current_trans += [Retinex()]
+    def retinex(self, *args, **kwargs):
+        self.current_trans += [Retinex(*args, **kwargs)]
         return self
 
     def brightness_contrast(self, brightness, contrast):

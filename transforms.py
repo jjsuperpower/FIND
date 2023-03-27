@@ -57,7 +57,7 @@ class Hist_EQ():
     
     
 class Retinex():
-    def __init__(self):
+    def __init__(self, algorithm:str, *args, **kwargs):
         # check of retinex folder exists
         if not os.path.exists('retinex'):
             print('retinex submodule not found')
@@ -68,16 +68,32 @@ class Retinex():
         # workdir_path = os.path.dirname(os.path.abspath(__file__))
         # sys.path.append(os.path.join(workdir_path, 'retinex'))
         
-        # import retinex_MSRCP from code folder in retinex submodule        
-        from retinex.code.retinex import retinex_MSRCP
-        self.retinex_MSRCP = retinex_MSRCP
+        self.args = args
+        self.kwargs = kwargs
         
+        # import retinex_MSRCP from code folder in retinex submodule        
+        from retinex.code.retinex import retinex_SSR, retinex_MSR, retinex_MSRCR, retinex_gimp, retinex_MSRCP, retinex_AMSR
+        
+        if algorithm == 'SSR':
+            self.retinex_fn = retinex_SSR
+        elif algorithm == 'MSR':
+            self.retinex_fn = retinex_MSR
+        elif algorithm == 'MSRCR':
+            self.retinex_fn = retinex_MSRCR
+        elif algorithm == 'gimp':
+            self.retinex_fn = retinex_gimp
+        elif algorithm == 'MSRCP':
+            self.retinex_fn = retinex_MSRCP
+        elif algorithm == 'AMSR':
+            self.retinex_fn = retinex_AMSR
+        else:
+            raise ValueError(f'algorithm {algorithm} not found')
             
     def __call__(self, img:torch.Tensor):
         img = img.numpy() * 255
         img = img.swapaxes(0, 2).swapaxes(0, 1)       # make channels last
         img = img.astype(np.uint8)
-        img = self.retinex_MSRCP(img)
+        img = self.retinex_fn(img, *self.args, **self.kwargs)
         img = img.astype(np.float32) / 255
         img = img.swapaxes(0, 1).swapaxes(0, 2)       # make channels first
         img = torch.from_numpy(img)
