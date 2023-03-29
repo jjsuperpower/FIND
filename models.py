@@ -28,10 +28,14 @@ class Model_Wrapper(pl.LightningModule):
         y_hat = self(x)
         acc1 = torchmetrics.functional.accuracy(y_hat, y, top_k=1)
         acc5 = torchmetrics.functional.accuracy(y_hat, y, top_k=5)
+        conf = torch.mean(torch.max(F.softmax(y_hat, dim=1), dim=1).values)
         loss = F.cross_entropy(y_hat, y)
-        self.log('test_acc1', acc1)
-        self.log('test_acc5', acc5)
-        self.log('test_loss', loss)
+        self.log('Top 1 Acc %', acc1*100)
+        self.log('Top 5 Acc %', acc5*100)
+        self.log('Confidence %', conf*100)
+        self.log('Pixel Val STD', torch.std(x) * 255)
+        self.log('Pixel Val MEAN', torch.mean(x) * 255)
+        # self.log('Loss', loss)
         
         return loss
 
@@ -67,6 +71,16 @@ class Preprocess():
         
     def basic(self):
         return transforms.Compose(deepcopy(self.basic_trans))
+    
+    def basic_loader(self):
+        tmp_trans = deepcopy(self.current_trans)
+        self.current_trans = deepcopy(self.basic_trans)
+        loader = self.get_loader()
+        self.current_trans = tmp_trans
+        return loader
+    
+    def copy(self):
+        return deepcopy(self)
     
     def get_trans(self):
         return transforms.Compose(deepcopy(self.current_trans))
