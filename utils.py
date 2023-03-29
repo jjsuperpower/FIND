@@ -153,7 +153,9 @@ class View:
         
         
     @staticmethod
-    def compare_color(imgs_list:list[np.ndarray| torch.Tensor]| np.ndarray| torch.Tensor, labels:list[str]|str=None, figsize:tuple=(10, 16)) -> None:
+    def compare_color(imgs_list:list[np.ndarray| torch.Tensor]| np.ndarray| torch.Tensor, 
+                      labels:list[str]|str=None, 
+                      figsize:tuple=(10, 16)) -> None:
         ''' Compare multiple images
         
         This function will plot multiple images in a grid. If there is only one image group,
@@ -206,21 +208,21 @@ class View:
         if len(imgs_list) == 1:
             for i, img in enumerate(imgs_list[0]):
                 axs[i].axis('off')
-                axs[i].set_title(labels[0])
+                axs[i].set_title(labels[0], fontsize=10)
                 axs[i].imshow(img)
 
         # if only one image in each image group, plot each image group in a row
         elif len(imgs_list[0]) == 1:
             for i, imgs in enumerate(imgs_list):
                 axs[i].axis('off')
-                axs[i].set_title(labels[i])
+                axs[i].set_title(labels[i], fontsize=10)
                 axs[i].imshow(imgs[0])
                 
         else:
             for i, imgs in enumerate(imgs_list):        # rows
+                axs[i, 0].set_title(labels[i], fontsize=10)
                 for j, img in enumerate(imgs):          # columns
                     axs[i, j].axis('off')
-                    axs[i, j].set_title(labels[i])
                     axs[i, j].imshow(img)
             
         plt.show()
