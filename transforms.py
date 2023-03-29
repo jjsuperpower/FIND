@@ -40,14 +40,35 @@ class Hist_EQ():
         img = img.numpy()
         img = img.swapaxes(0, 2).swapaxes(0, 1)       # make channels last
         img = np.clip((img * 255), 0, 255).astype(np.uint8)
-        # img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-        # img[:,:,2] = cv2.equalizeHist(img[:,:,2])
-        # img = cv2.cvtColor(img, cv2.COLOR_HSV2RGB)
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        img[:,:,0] = cv2.equalizeHist(img[:,:,0])
-        img[:,:,1] = cv2.equalizeHist(img[:,:,1])
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
         img[:,:,2] = cv2.equalizeHist(img[:,:,2])
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = cv2.cvtColor(img, cv2.COLOR_HSV2RGB)
+        # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        # img[:,:,0] = cv2.equalizeHist(img[:,:,0])
+        # img[:,:,1] = cv2.equalizeHist(img[:,:,1])
+        # img[:,:,2] = cv2.equalizeHist(img[:,:,2])
+        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = img.astype(np.float32) / 255
+        img = img.swapaxes(0, 1).swapaxes(0, 2)       # make channels first
+        img = torch.from_numpy(img)
+        return img
+    
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
+    
+class AHE():
+    def __init__(self, tile_size:int, clip_limit:float = 2.0):
+        self.tile_size = tile_size
+        self.clip_limit = clip_limit
+    
+    def __call__(self, img:torch.Tensor):
+        img = img.numpy()
+        img = img.swapaxes(0, 2).swapaxes(0, 1)       # make channels last
+        img = np.clip((img * 255), 0, 255).astype(np.uint8)
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+        clahe = cv2.createCLAHE(clipLimit=self.clip_limit, tileGridSize=(self.tile_size, self.tile_size))
+        img[:,:,2] = clahe.apply(img[:,:,2])
+        img = cv2.cvtColor(img, cv2.COLOR_HSV2RGB)
         img = img.astype(np.float32) / 255
         img = img.swapaxes(0, 1).swapaxes(0, 2)       # make channels first
         img = torch.from_numpy(img)
@@ -143,19 +164,22 @@ if __name__ == '__main__':
     img = transforms.Resize((256, 256))(img)
     img = transforms.ToTensor()(img)
     
-    # dark_img = Luminance(1/8)(img)
-    # View.compare_color(img, dark_img)
+    dark_img = Luminance(1/8)(img)
+    View.compare_color([img, dark_img],['Original', 'Dark'], figsize=(10, 5))
     
-    # hist_img = Hist_EQ()(dark_img)
-    # View.compare_color(dark_img, hist_img)
+    hist_img = Hist_EQ()(dark_img)
+    View.compare_color([dark_img, hist_img],['Dark', 'Hist EQ'], figsize=(10, 5))
     
-    # low_contrast_img = Brightness_Contrast(-.25, 0.2)(img)
-    # View.compare_color(img, low_contrast_img)
+    ahe_img = AHE(8, clip_limit=2)(img)
+    View.compare_color([img, ahe_img],['Original', 'AHE'], figsize=(10, 5))
     
-    # retinex_img = Retinex()(low_contrast_img)
-    # View.compare_color(low_contrast_img, retinex_img)
+    low_contrast_img = Brightness_Contrast(-.25, 0.2)(img)
+    View.compare_color([img, low_contrast_img],['Original', 'Low Contrast'], figsize=(10, 5))
+    
+    retinex_img = Retinex('SSR', 100)(low_contrast_img)
+    View.compare_color([low_contrast_img, retinex_img],['Low Contrast', 'Retinex'], figsize=(10, 5))
     
     blur_img = Blur(11)(img)
-    View.compare_color(img, blur_img)
+    View.compare_color([img, blur_img],['Original', 'Blur'], figsize=(10, 5))
     
     
