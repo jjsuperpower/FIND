@@ -1,3 +1,6 @@
 [submodule "retinex"]
 	path = retinex
 	url = https://github.com/jjsuperpower/retinex
+[submodule "yolov5"]
+	path = yolov5
+	url = https://github.com/ultralytics/yolov5

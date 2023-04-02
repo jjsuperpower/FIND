@@ -155,7 +155,7 @@ class View:
     @staticmethod
     def compare_color(imgs_list:list[np.ndarray| torch.Tensor]| np.ndarray| torch.Tensor, 
                       labels:list[str]|str=None, 
-                      figsize:tuple=(10, 16)) -> None:
+                      figsize:tuple=(10, 6)) -> None:
         ''' Compare multiple images
         
         This function will plot multiple images in a grid. If there is only one image group,
@@ -203,9 +203,15 @@ class View:
             
         # first axis is rows, second axis is columns
         fig, axs = plt.subplots(len(imgs_list), len(imgs_list[0]), figsize=figsize)
+        
+        # if displaying one image
+        if (len(imgs_list) == 1) and (len(imgs_list[0]) == 1):
+            axs.axis('off')
+            axs.imshow(imgs_list[0][0])
+            axs.set_title(labels[0], fontsize=10)
             
         # if only one image group, plot each image in a column
-        if len(imgs_list) == 1:
+        elif len(imgs_list) == 1:
             for i, img in enumerate(imgs_list[0]):
                 axs[i].axis('off')
                 axs[i].set_title(labels[0], fontsize=10)
@@ -259,3 +265,21 @@ def sample_imgs_list(x:DataLoader, samples:int|slice = slice(0,1)):
         return samples_sel
     else:
         raise ValueError('samples must be of type int or slice')
+    
+def compare_ds(trainer, model, datasets, labels, view_img_slice, view_only=False, figsize=(12,6), verbose=True, skip_results:list=[0]):
+    results = {}
+    samples = []
+    #display first
+    for ds in datasets:
+        samples.append(sample_imgs_list(ds, view_img_slice))
+    View.compare_color(samples, labels, figsize=figsize)
+    
+    if not view_only:
+        for i in range(len(datasets)):
+            if i in skip_results:
+                continue
+            result = trainer.test(model, datasets[i], verbose=verbose)
+            results[labels[i]] = result
+        return results
+    else:
+        return None

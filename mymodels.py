@@ -4,6 +4,7 @@ import lightning.pytorch as pl
 from torchvision import transforms, datasets
 from torch.utils.data import DataLoader
 import torchmetrics
+import os
 
 from copy import deepcopy
 
@@ -122,3 +123,8 @@ class Preprocess():
     def get_dataset(self):
         if self.dataset_type == 'imagenet':
             return datasets.ImageNet(root=self.dataset_path, split=self.split, transform=self.get_trans())
+        elif self.dataset_type == 'coco':
+            annot = os.path.join(self.dataset_path, 'instances_val2017.json')
+            return datasets.coco.CocoDetection(root=self.dataset_path, annFile=annot, transform=self.get_trans())
+        else:
+            raise NotImplementedError
