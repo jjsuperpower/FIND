@@ -11,12 +11,15 @@ from copy import deepcopy
 from transforms import Luminance, Hist_EQ, Brightness_Contrast, Retinex, Blur
 
 class Model_Wrapper(pl.LightningModule):
-    def __init__(self, model):
+    def __init__(self, model, model_type='class', scale=1.0):
         super().__init__()
         self.model = model
         
+        self.model_type = model_type
+        self.scale = scale
+        
     def forward(self, x):
-        return self.model(x)
+        return self.model(x*self.scale)
 
     def training_step(self, batch, batch_idx):
         x, y = batch
@@ -27,13 +30,33 @@ class Model_Wrapper(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
-        acc1 = torchmetrics.functional.accuracy(y_hat, y, top_k=1)
-        acc5 = torchmetrics.functional.accuracy(y_hat, y, top_k=5)
-        conf = torch.mean(torch.max(F.softmax(y_hat, dim=1), dim=1).values)
-        loss = F.cross_entropy(y_hat, y)
-        self.log('Top 1 Acc %', acc1*100)
-        self.log('Top 5 Acc %', acc5*100)
-        self.log('Confidence %', conf*100)
+
+        if self.model_type == 'class':
+            acc1 = torchmetrics.functional.accuracy(y_hat, y, top_k=1)
+            acc5 = torchmetrics.functional.accuracy(y_hat, y, top_k=5)
+            conf = torch.mean(torch.max(F.softmax(y_hat, dim=1), dim=1).values)
+            loss = F.cross_entropy(y_hat, y)
+        
+            
+            acc1 = torchmetrics.functional.accuracy(y_hat, y, top_k=1)
+            acc5 = torchmetrics.functional.accuracy(y_hat, y, top_k=5)
+            conf = torch.mean(torch.max(F.softmax(y_hat, dim=1), dim=1).values)
+            loss = F.cross_entropy(y_hat, y)
+            
+            self.log('Top 1 Acc %', acc1*100)
+            self.log('Top 5 Acc %', acc5*100)
+            self.log('Confidence %', conf*100)
+            self.log('Loss', loss)
+            
+        elif self.model_type == 'yolo':
+            pass
+            
+        elif self.model_type == 'obj':
+            raise NotImplementedError
+        
+        else:
+            raise NotImplementedError
+
         self.log('Pixel Val STD', torch.std(x) * 255)
         self.log('Pixel Val MEAN', torch.mean(x) * 255)
         # self.log('Loss', loss)
