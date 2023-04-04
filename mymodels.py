@@ -8,7 +8,7 @@ import os
 from copy import deepcopy
 
 from transforms import Luminance, Hist_EQ, Brightness_Contrast, Retinex, Blur
-from coco_ds import CocoDataset, CocoResults
+from coco_ds import CocoDataset
 
 class Model_Wrapper(pl.LightningModule):
     def __init__(self, model, model_type='class', scale=1.0):

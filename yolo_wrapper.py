@@ -2,11 +2,9 @@ import torch
 from ultralytics import YOLO
 from copy import deepcopy
 import numpy as np
-import contextlib
 from ultralytics.yolo.utils.ops import coco80_to_coco91_class
 
 from coco_ds import CocoResults
-from myutils import Void
 
 
 COCO_80_TO_91 = coco80_to_coco91_class()

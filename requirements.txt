@@ -4,3 +4,5 @@ torchvision
 torchmetrics
 matplotlib
 numpy
+ultralytics
+pycocotools
