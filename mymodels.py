@@ -5,10 +5,10 @@ from torchvision import transforms, datasets
 from torch.utils.data import DataLoader
 import torchmetrics
 import os
-
 from copy import deepcopy
 
 from transforms import Luminance, Hist_EQ, Brightness_Contrast, Retinex, Blur
+from coco_ds import CocoDataset, CocoResults
 
 class Model_Wrapper(pl.LightningModule):
     def __init__(self, model, model_type='class', scale=1.0):
@@ -21,17 +21,17 @@ class Model_Wrapper(pl.LightningModule):
     def forward(self, x):
         return self.model(x*self.scale)
 
-    def training_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self(x)
-        loss = F.cross_entropy(y_hat, y)
-        return loss
+    # def training_step(self, batch, batch_idx):
+    #     x, y = batch
+    #     y_hat = self(x)
+    #     loss = F.cross_entropy(y_hat, y)
+    #     return loss
 
     def test_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self(x)
-
         if self.model_type == 'class':
+            imgs, y = batch
+            y_hat = self(imgs)
+            
             acc1 = torchmetrics.functional.accuracy(y_hat, y, top_k=1)
             acc5 = torchmetrics.functional.accuracy(y_hat, y, top_k=5)
             conf = torch.mean(torch.max(F.softmax(y_hat, dim=1), dim=1).values)
@@ -48,8 +48,15 @@ class Model_Wrapper(pl.LightningModule):
             self.log('Confidence %', conf*100)
             self.log('Loss', loss)
             
-        elif self.model_type == 'yolo':
-            pass
+        elif self.model_type == 'yolo':          
+            ids, imgs, orig_sizes = batch
+            
+            self.model.reset_coco_evaluator()
+            evaluator, _ = self.model.predict_coco(ids, imgs, orig_sizes, gen_plot=False)
+            results = evaluator.eval()
+            
+            self.log('mAP 50:95 %', results['AP'] * 100)
+            self.log('Confidence %', results['conf'] * 100)
             
         elif self.model_type == 'obj':
             raise NotImplementedError
@@ -57,11 +64,10 @@ class Model_Wrapper(pl.LightningModule):
         else:
             raise NotImplementedError
 
-        self.log('Pixel Val STD', torch.std(x) * 255)
-        self.log('Pixel Val MEAN', torch.mean(x) * 255)
-        # self.log('Loss', loss)
+        self.log('Pixel Val STD', torch.std(imgs) * 255)
+        self.log('Pixel Val MEAN', torch.mean(imgs) * 255)
+        # self.log('Loss', loss)get_loader()
         
-        return loss
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
@@ -147,7 +153,6 @@ class Preprocess():
         if self.dataset_type == 'imagenet':
             return datasets.ImageNet(root=self.dataset_path, split=self.split, transform=self.get_trans())
         elif self.dataset_type == 'coco':
-            annot = os.path.join(self.dataset_path, 'instances_val2017.json')
-            return datasets.coco.CocoDetection(root=self.dataset_path, annFile=annot, transform=self.get_trans())
+            return CocoDataset(root=self.dataset_path, set='val2017', transform=self.get_trans())
         else:
             raise NotImplementedError

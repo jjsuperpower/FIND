@@ -6,6 +6,10 @@ from torch.utils.data import DataLoader
 # set matplotlib to show images with black background
 plt.style.use('dark_background')
 
+class Void(object):
+    def write(self, *args, **kwargs):
+        pass
+
 class View:
     @staticmethod
     def show_random_color(x, num_to_show):

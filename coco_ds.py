@@ -1,12 +1,14 @@
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
-from torch.utils.data import IterableDataset
+from torch.utils.data import Dataset
 from pathlib import Path
 from PIL import Image
+import torch
 import contextlib
 from copy import deepcopy
 import json
-import os
+
+from myutils import Void
 
 COCO_classes = [
     "background", "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat", 
@@ -20,42 +22,15 @@ COCO_classes = [
     "toaster", "sink", "refrigerator", "blender", "book", "clock", "vase", "scissors", "teddy bear", "hair drier", 
     "toothbrush", "hair brush"
 ]
-
-class Void(object):
-    def write(self, *args, **kwargs):
-        pass
-
-class CocoResults:
-    def __init__(self, results_filename: str= None) -> None:
-        self.coco_results = []
-        self.file_name = results_filename
-
-    def add_result(self, image_id: int, results: list):
-        for label, score, bbox in results:
-            self.coco_results.append({
-                "image_id": image_id,
-                "category_id": label,
-                "bbox": [p for p in bbox],
-                "score": score
-            })
-            
-    def get_results(self):
-        return deepcopy(self.coco_results)
-            
-    def save_results(self, results=None):
-        if results is not None:
-            results = self.coco_results
-            
-        with open(self.file_name, 'w') as f:
-            json.dump(results, f, indent=4)
         
 
-class CocoDataset(IterableDataset):
+class CocoDataset(Dataset):
     def __init__(self, root: str, set: str, size: int=None, transform=None, quiet: bool=True):
         super().__init__()
         self.transform = transform
         self.rootPath = Path(root)
         self.dataType = set
+        self.quiet = quiet
         annPath = self.rootPath.joinpath('annotations', f'instances_{set}.json')
         if quiet:
             with contextlib.redirect_stdout(Void):
@@ -81,46 +56,99 @@ class CocoDataset(IterableDataset):
         
         if self.transform is not None:
             img = self.transform(img)
+            
+        if img.size(0) == 1:
+            if not self.quiet:
+                print(f'Warning: grayscale image detected (ID = {imgId}), converting to RGB')
+            img = img.repeat(3, 1, 1)
         
-        return imgId, img, img_size
+        return imgId, img, torch.Tensor([*img_size])
     
     def __len__(self):
         return len(self.imgIds)
-        
-def _coco_eval(coco_dataset: CocoDataset, cocoValPredfile: str, img_ids: list[int]=None, iouType: str='bbox', verbose:bool=False):
-    coco = coco_dataset.coco
-    cocoValPred = coco.loadRes(cocoValPredfile)
-    coco_eval = COCOeval(coco, cocoValPred, iouType)
-    if img_ids is not None:
-        coco_eval.params.imgIds = img_ids
+    
+    
+class CocoResults:
+    def __init__(self, coco_dataset: CocoDataset, verbose:bool=False) -> None:
+        self.coco_dataset = coco_dataset
+        self.verbose = verbose
+        self.coco_results = []
+        self.img_ids = []
 
-    coco_eval.evaluate()
-    coco_eval.accumulate()
-    coco_eval.summarize()
+    def add_results(self, results: list, image_id: int):
+        for label, bbox, score in results:
+           
+            self.coco_results.append({
+                "image_id": image_id,
+                "category_id": label,
+                "bbox": [p for p in bbox],
+                "score": score
+            })
+        self.img_ids.append(image_id)
+        return self
+    
+    def reset(self):
+        self.coco_results = []
+        self.img_ids = []
+        return self
+            
+    def get_results(self):
+        return deepcopy(self.coco_results)
+            
+    def save_results(self, filename:str):
+            
+        with open(filename, 'w') as f:
+            json.dump(self.coco_results, f, indent=4)
+            
+        return self
+            
+    def load_results(self):
+        with open(self.file_name, 'r') as f:
+            self.coco_results = json.load(f)
+        self.img_ids = list(set([r['image_id'] for r in self.coco_results]))
         
-    result = {}
+        return self
     
-    result['AP'] = coco_eval.stats[0]
-    result['AP50'] = coco_eval.stats[1]
-    result['AP75'] = coco_eval.stats[2]
-    result['APs'] = coco_eval.stats[3]
-    result['APm'] = coco_eval.stats[4]
-    result['APl'] = coco_eval.stats[5]
-    result['AR1'] = coco_eval.stats[6]
-    result['AR10'] = coco_eval.stats[7]
-    result['AR100'] = coco_eval.stats[8]
-    result['ARs'] = coco_eval.stats[9]
-    result['ARm'] = coco_eval.stats[10]
-    result['ARl'] = coco_eval.stats[11]
-    
-    return result
+    def get_avg_conf(self):
+        return sum([r['score'] for r in self.coco_results]) / len(self.coco_results)
+        
+    def _eval(self, iouType: str='bbox'):
+        
+        coco = self.coco_dataset.coco
+        cocoValPred = coco.loadRes(self.coco_results)
+        coco_eval = COCOeval(coco, cocoValPred, iouType)
+        
+        if len(self.img_ids) > 0:
+            coco_eval.params.imgIds = self.img_ids
 
-def coco_eval(*args, **kwargs):
-    with contextlib.redirect_stdout(Void):
-        return _coco_eval(*args, **kwargs)
-    
-def coco_eval_verbose(*args, **kwargs):
-    return _coco_eval(*args, **kwargs)
+        coco_eval.evaluate()
+        coco_eval.accumulate()
+        coco_eval.summarize()
+            
+        result = {}
+        
+        result['AP'] = coco_eval.stats[0]
+        result['AP50'] = coco_eval.stats[1]
+        result['AP75'] = coco_eval.stats[2]
+        result['APs'] = coco_eval.stats[3]
+        result['APm'] = coco_eval.stats[4]
+        result['APl'] = coco_eval.stats[5]
+        result['AR1'] = coco_eval.stats[6]
+        result['AR10'] = coco_eval.stats[7]
+        result['AR100'] = coco_eval.stats[8]
+        result['ARs'] = coco_eval.stats[9]
+        result['ARm'] = coco_eval.stats[10]
+        result['ARl'] = coco_eval.stats[11]
+        result['conf'] = self.get_avg_conf()
+        
+        return result
+
+    def eval(self, *args, **kwargs):
+        if self.verbose:
+            return self._eval(*args, **kwargs)
+        else:
+            with contextlib.redirect_stdout(Void):
+                return self._eval(*args, **kwargs)
 
     
         
@@ -147,10 +175,9 @@ if __name__ == '__main__':
     # test image for mAP evaluation
     img = dataset.get_by_id(285)
     
-    fake_results = [{'image_id': 285, 'category_id': 23, 'bbox': [0.0, 50, 600.0, 600.0], 'score': 0.9}]
-    
-    # eval = CocoEvalWrapper(dataset, fake_results, img_ids=[285])
-    eval = coco_eval(dataset, fake_results, img_ids=[285])
+    label, bbox, score  = 23, [0.0, 50, 600.0, 600.0],  0.9
+    fake_results = CocoResults(dataset).add_results([(label, bbox, score)], 285)
+    eval = fake_results.eval()
     
     print(eval['AP'])
     
