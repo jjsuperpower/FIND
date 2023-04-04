@@ -68,6 +68,9 @@ class Model_Wrapper(pl.LightningModule):
         self.log('Pixel Val MEAN', torch.mean(imgs) * 255)
         # self.log('Loss', loss)get_loader()
         
+    def plot(self, *args, **kwargs):
+        return self.model.plot(*args, **kwargs)
+        
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)

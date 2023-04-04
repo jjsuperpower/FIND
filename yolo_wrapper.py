@@ -26,7 +26,7 @@ class YOLOv8_COCO_Wrapper(YOLO):
         return self
         
         
-    def predict_coco(self, img_ids:int|list, img:torch.Tensor, orig_size:list[tuple[int,int]], gen_plot:bool=False):
+    def predict_coco(self, img_ids:int|list, imgs:torch.Tensor, orig_size:list[tuple[int,int]], gen_plot:bool=False):
         
         if isinstance(img_ids, int):
             img_ids = [img_ids]
@@ -34,11 +34,8 @@ class YOLOv8_COCO_Wrapper(YOLO):
         if isinstance(orig_size, tuple):
             orig_size = [orig_size]
         
-        img_size = img.size()[-2:]
-        
-        results = self.predict(img*255)
-        
-        plots = torch.empty_like(img)
+        img_size = imgs.size()[-2:]
+        results = self.predict(imgs*255)
         
         for idx, result in enumerate(results):
             result = deepcopy(result)
@@ -50,10 +47,10 @@ class YOLOv8_COCO_Wrapper(YOLO):
             for i in range(len(boxes.cls)):
                 label = COCO_80_TO_91[int(boxes.cls[i].cpu().item())]
                 bbox = boxes.xyxy[i].clone()
-                bbox[0] *= orig_size[idx][0] / 640       # rescale to original image size
-                bbox[1] *= orig_size[idx][1] / 640
-                bbox[2] *= orig_size[idx][0] / 640
-                bbox[3] *= orig_size[idx][1] / 640
+                bbox[0] *= orig_size[idx][0] / img_size[0]       # rescale to original image size
+                bbox[1] *= orig_size[idx][1] / img_size[1]
+                bbox[2] *= orig_size[idx][0] / img_size[0]
+                bbox[3] *= orig_size[idx][1] / img_size[1]
                 bbox[2] = bbox[2] - bbox[0]                 # convert to xywh
                 bbox[3] = bbox[3] - bbox[1]
                 bbox = bbox.round().int()
@@ -62,22 +59,39 @@ class YOLOv8_COCO_Wrapper(YOLO):
                 score = boxes.conf[i].cpu().item()
                 coco_pred.append((label, bbox, score))
                 
-            if gen_plot:
-                img_to_plot = img[idx].clone() * 255
-
-                img_to_plot = img_to_plot.permute(1,2,0)
-                img_to_plot = img_to_plot.cpu().numpy()
-                img_to_plot = np.ascontiguousarray(img_to_plot)
-                result.orig_img = img_to_plot
-                plot = result.plot()
-                plot = torch.Tensor(plot)
-                plot = plot.permute(2,0,1)
-                plot = plot / 255
-                plots[idx] = plot
-                
             self.coco_evaluator.add_results(coco_pred, img_ids[idx].cpu().int().item())
+            
+        if gen_plot:
+            plots = self.plot(imgs, results)
+        else:
+            plots = None
         
         return self.coco_evaluator, plots
+    
+    
+    
+    def plot(self, imgs:torch.Tensor, results:list[dict]=None):
+        
+        if results is None:
+            results = self.predict(imgs*255)
+            
+        plots = torch.empty_like(imgs)
+            
+        for idx, result in enumerate(results):
+        
+            img_to_plot = imgs[idx].clone() * 255
+
+            img_to_plot = img_to_plot.permute(1,2,0)
+            img_to_plot = img_to_plot.cpu().numpy()
+            img_to_plot = np.ascontiguousarray(img_to_plot)
+            result.orig_img = img_to_plot
+            plot = result.plot()
+            plot = torch.Tensor(plot)
+            plot = plot.permute(2,0,1)
+            plot = plot / 255
+            plots[idx] = plot
+        
+        return plots
     
     def __call__(self, *args, **kwargs):
         return self.predict_coco(*args, **kwargs)

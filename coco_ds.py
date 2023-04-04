@@ -54,13 +54,15 @@ class CocoDataset(Dataset):
         img = self.get_by_id(imgId)
         img_size = img.size
         
-        if self.transform is not None:
-            img = self.transform(img)
-            
-        if img.size(0) == 1:
+        if img.mode != 'RGB':
             if not self.quiet:
                 print(f'Warning: grayscale image detected (ID = {imgId}), converting to RGB')
-            img = img.repeat(3, 1, 1)
+            new_img = Image.new('RGB', img.size)
+            new_img.paste(img)
+            img = new_img
+            
+        if self.transform is not None:
+            img = self.transform(img)
         
         return imgId, img, torch.Tensor([*img_size])
     

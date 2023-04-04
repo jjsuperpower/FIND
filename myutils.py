@@ -216,9 +216,9 @@ class View:
             
         # if only one image group, plot each image in a column
         elif len(imgs_list) == 1:
+            axs[0].set_title(labels[0], fontsize=10)
             for i, img in enumerate(imgs_list[0]):
                 axs[i].axis('off')
-                axs[i].set_title(labels[0], fontsize=10)
                 axs[i].imshow(img)
 
         # if only one image in each image group, plot each image group in a row
@@ -238,7 +238,7 @@ class View:
         plt.show()
         
         
-def sample_imgs_list(x:DataLoader, samples:int|slice = slice(0,1)):
+def sample_imgs_list(x:DataLoader, samples:int|slice|list = slice(0,1)):
     dataset_size = x.dataset[0][0].size()
     
     if isinstance(samples, int):
@@ -267,23 +267,16 @@ def sample_imgs_list(x:DataLoader, samples:int|slice = slice(0,1)):
             count += 1
         
         return samples_sel
+    
+    elif isinstance(samples, list):
+        dataset = x.dataset
+
+        samples_sel = torch.empty(size=(len(samples), *dataset_size))
+        count = 0
+        for idx in samples:
+            samples_sel[count] = dataset[idx][0]
+            count += 1
+        
+        return samples_sel
     else:
         raise ValueError('samples must be of type int or slice')
-    
-def compare_ds(trainer, model, datasets, labels, view_img_slice, view_only=False, figsize=(12,6), verbose=True, skip_results:list=[0]):
-    results = {}
-    samples = []
-    #display first
-    for ds in datasets:
-        samples.append(sample_imgs_list(ds, view_img_slice))
-    View.compare_color(samples, labels, figsize=figsize)
-    
-    if not view_only:
-        for i in range(len(datasets)):
-            if i in skip_results:
-                continue
-            result = trainer.test(model, datasets[i], verbose=verbose)
-            results[labels[i]] = result
-        return results
-    else:
-        return None
