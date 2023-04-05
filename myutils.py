@@ -2,9 +2,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+import io
 
 # set matplotlib to show images with black background
-plt.style.use('dark_background')
+# plt.style.use('dark_background')
 
 class Void(object):
     def write(self, *args, **kwargs):
@@ -29,98 +30,6 @@ class View:
             ax.get_xaxis().set_visible(False)
             ax.get_yaxis().set_visible(False)
         plt.show()
-
-    # @staticmethod
-    # def compare_color(before, after):
-        
-    #     if isinstance(before, torch.Tensor):
-    #         before = View._torch2np(before)
-    #     if isinstance(after, torch.Tensor):
-    #         after = View._torch2np(after)
-            
-    #     if len(before.shape) == 3:
-    #         before = View._add_dim(before)
-    #         after = View._add_dim(after)
-            
-    #     if before.shape != after.shape:
-    #         raise ValueError('Before and after must have same shape')
-        
-    #     fig, axs = plt.subplots(2, before.shape[0])
-        
-    #     if before.shape[0] > 1:
-    #         for i in range(before.shape[0]):
-    #             axs[0, i].axis('off')
-    #             axs[0, i].imshow(before[i])
-                
-    #         for i in range(after.shape[0]):
-    #             axs[1, i].axis('off')
-    #             axs[1, i].imshow(after[i])
-                
-    #         axs[0,0].set_title('Before')
-    #         axs[1,0].set_title('After')
-    #     else:
-    #         axs[0].axis('off')
-    #         axs[0].imshow(before[0])
-    #         axs[1].axis('off')
-    #         axs[1].imshow(after[0])
-            
-    #         axs[0].set_title('Before')
-    #         axs[1].set_title('After')
-            
-    #     plt.show()
-
-    @staticmethod
-    def compare3_color(before, after, orig):
-        if isinstance(before, torch.Tensor):
-            before = View._torch2np(before)
-        if isinstance(after, torch.Tensor):
-            after = View._torch2np(after)
-        if isinstance(orig, torch.Tensor):
-            orig = View._torch2np(orig)
-            
-        if before.shape == after.shape == orig.shape:
-            pass
-        else:
-            raise ValueError('Before and after must have same shape')
-            
-        if len(before.shape) == 3:
-            before = View._add_dim(before)
-            after = View._add_dim(after)
-            orig = View._add_dim(orig)
-        
-        fig, axs = plt.subplots(3, before.shape[0])
-        
-        if before.shape[0] > 1:
-            for i in range(before.shape[0]):
-                axs[0, i].axis('off')
-                axs[0, i].imshow(before[i])
-                
-            for i in range(after.shape[0]):
-                axs[1, i].axis('off')
-                axs[1, i].imshow(after[i])
-                
-            for i in range(orig.shape[0]):
-                axs[2, i].axis('off')
-                axs[2, i].imshow(orig[i])
-                
-            axs[0,0].set_title('Before')
-            axs[1,0].set_title('After')
-            axs[2,0].set_title('Original')
-        else:
-            axs[0].axis('off')
-            axs[0].imshow(before[0])
-            axs[1].axis('off')
-            axs[1].imshow(after[0])
-            axs[2].axis('off')
-            axs[2].imshow(before[0])
-            
-            axs[0].set_title('Before')
-            axs[1].set_title('After',)
-            axs[2].set_title('Original')
-            
-        plt.show()
-        
-        
         
     @staticmethod
     def chan_f2l(array:np.ndarray) -> np.ndarray:
@@ -206,6 +115,7 @@ class View:
                 imgs_list[i] = View.add_dim(imgs_list[i])
             
         # first axis is rows, second axis is columns
+        plt.figure(figsize=figsize)
         fig, axs = plt.subplots(len(imgs_list), len(imgs_list[0]), figsize=figsize)
         
         # if displaying one image
@@ -236,6 +146,40 @@ class View:
                     axs[i, j].imshow(img)
             
         plt.show()
+        
+    def histogram(imgs:np.ndarray|torch.Tensor, figsize:tuple=(6, 2), show_rgb:bool=False):
+        
+        if isinstance(imgs, torch.Tensor):
+            imgs = View.chan_f2l(imgs.double().numpy())
+            imgs = (imgs * 255).astype(np.uint8)
+            
+        if len(imgs.shape) == 3:
+            imgs = View.add_dim(imgs)
+        
+        for i, img in enumerate(imgs):
+            rgb_hist = np.zeros(shape=(3, 256))
+            
+            for j in range(3):
+                for x in range(img.shape[0]):
+                    for y in range(img.shape[1]):
+                        rgb_hist[j, img[x, y, j]] += 1
+                        
+                        
+            
+            
+            plt.figure(figsize=figsize)
+            
+            if show_rgb:
+                plt.plot(rgb_hist[0], color='red')
+                plt.plot(rgb_hist[1], color='green')
+                plt.plot(rgb_hist[2], color='blue')
+            
+            #plot the average of the three channels
+            plt.plot((rgb_hist[0] + rgb_hist[1] + rgb_hist[2])/3, color='black')
+            
+        plt.show()
+        
+            
         
         
 def sample_imgs_list(x:DataLoader, samples:int|slice|list = slice(0,1)):
