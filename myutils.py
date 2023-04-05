@@ -68,7 +68,8 @@ class View:
     @staticmethod
     def compare_color(imgs_list:list[np.ndarray| torch.Tensor]| np.ndarray| torch.Tensor, 
                       labels:list[str]|str=None, 
-                      figsize:tuple=(10, 6)) -> None:
+                      figsize:tuple=(10, 6),
+                      label_cols:bool=False) -> None:
         ''' Compare multiple images
         
         This function will plot multiple images in a grid. If there is only one image group,
@@ -101,8 +102,12 @@ class View:
             labels = [labels]
             
         # if labels is not the same length as imgs_list, raise error
-        if len(labels) != len(imgs_list):
-            raise ValueError('Labels must be the same length as imgs_list')
+        if label_cols:
+            if len(labels) != len(imgs_list[0]):
+                raise ValueError('Labels must be the same length as number of colums')
+        else:
+            if len(labels) != len(imgs_list):
+                raise ValueError('Labels must be the same length as imgs_list')
         
         # convert torch tensors to numpy arrays if necessary
         for i in range(len(imgs_list)):
@@ -126,24 +131,44 @@ class View:
             
         # if only one image group, plot each image in a column
         elif len(imgs_list) == 1:
-            axs[0].set_title(labels[0], fontsize=10)
-            for i, img in enumerate(imgs_list[0]):
-                axs[i].axis('off')
-                axs[i].imshow(img)
+            if label_cols:
+                for i, img in enumerate(imgs_list[0]):
+                    axs[i].set_title(labels[i], fontsize=10)
+                    axs[i].axis('off')
+                    axs[i].imshow(img)
+            else:
+                axs[0].set_title(labels[0], fontsize=10)
+                for i, img in enumerate(imgs_list[0]):
+                    axs[i].axis('off')
+                    axs[i].imshow(img)
 
         # if only one image in each image group, plot each image group in a row
         elif len(imgs_list[0]) == 1:
-            for i, imgs in enumerate(imgs_list):
-                axs[i].axis('off')
-                axs[i].set_title(labels[i], fontsize=10)
-                axs[i].imshow(imgs[0])
+            if label_cols:
+                axs[0].set_title(labels[0], fontsize=10)
+                for i, imgs in enumerate(imgs_list):
+                    axs[i].axis('off')
+                    axs[i].imshow(imgs[0])
+            else:
+                for i, imgs in enumerate(imgs_list):
+                    axs[i].axis('off')
+                    axs[i].set_title(labels[i], fontsize=10)
+                    axs[i].imshow(imgs[0])
                 
         else:
-            for i, imgs in enumerate(imgs_list):        # rows
-                axs[i, 0].set_title(labels[i], fontsize=10)
-                for j, img in enumerate(imgs):          # columns
-                    axs[i, j].axis('off')
-                    axs[i, j].imshow(img)
+            if label_cols:
+                for i, imgs in enumerate(imgs_list):        # rows
+                    for j, img in enumerate(imgs):          # columns
+                        axs[i, j].axis('off')
+                        axs[i, j].imshow(img)
+                        if i == 0:
+                            axs[0, j].set_title(labels[j], fontsize=10)
+            else:
+                for i, imgs in enumerate(imgs_list):        # rows
+                    axs[i, 0].set_title(labels[i], fontsize=10)
+                    for j, img in enumerate(imgs):          # columns
+                        axs[i, j].axis('off')
+                        axs[i, j].imshow(img)
             
         plt.show()
         
@@ -164,8 +189,6 @@ class View:
                     for y in range(img.shape[1]):
                         rgb_hist[j, img[x, y, j]] += 1
                         
-                        
-            
             
             plt.figure(figsize=figsize)
             
