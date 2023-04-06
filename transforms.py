@@ -1,14 +1,12 @@
 import torch
 import torch.nn as nn
-import torchvision
 from torchvision import transforms
 import cv2
 import numpy as np
-from myutils import View
-
 from PIL import Image
 import os
-import sys
+
+from myutils import View, ImgUtils
 
 class Luminance(object):
     def __init__(self, factor:float = 1):
@@ -150,6 +148,81 @@ class Blur():
     
     def __repr__(self):
         return self.__class__.__name__ + f'(kernel_size={self.kernel_size})'
+    
+    
+class HistRemap():
+    def __init__(self, target_hist:torch.Tensor):
+        self.target_hist = target_hist
+        
+    def __call__(self, img:torch.Tensor):
+        orig_img = ImgUtils.rgb_to_hsv(img.clone())
+        orig_img_type = orig_img.dtype
+        
+        img = (img[2,...] * 255).type(torch.uint8)
+    
+        lut = torch.zeros(shape=(256), dtype=torch.uint8)
+    
+        # first get the histogram of the image
+        img_hist = ImgUtils.img_to_hist(img)
+        hist = self.target_hist
+        img_hist = img_hist.astype(np.uint64)
+        
+        hist_idx = np.nonzero(hist)[0][0]
+        lut_idx = 0
+        diff = 0
+        
+        while(lut_idx < 256 and hist_idx < 256):       
+            diff = hist[hist_idx] - img_hist[lut_idx] + diff
+            lut[lut_idx] = hist_idx
+            
+            if diff < 0:
+                diff = diff + img_hist[lut_idx]
+                hist_idx += 1
+            
+            elif diff > 0:
+                diff = diff - hist[hist_idx]
+                lut_idx += 1
+            
+            else:
+                hist_idx += 1
+                lut_idx += 1   
+
+        if hist_idx >= 255:
+            lut[lut_idx:] = 255
+        else:
+            lut[lut_idx:] = hist_idx
+            
+        # apply lut to new image
+        for x in range(img.shape[0]):
+            for y in range(img.shape[1]):
+                img[x, y] = lut[img[x, y]]
+                
+        new_img = orig_img
+        new_img[2,...] = img / 255
+                
+        return ImgUtils.hsv_to_rgb(new_img).type(orig_img_type)
+    
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
+
+class DistRemap:
+    ''' Transform for remapping images to a target distribution '''
+    
+    def __init__(self, mu:torch.Tensor, sigma:torch.Tensor):
+        self.mu = mu
+        self.sigma = sigma
+        
+    def __call__(self, img:torch.TensorType) -> torch.Tensor:
+        ''' Mu and sigma are in range [0, 1]'''
+        img_mu, img_sigma = torch.mean(img), torch.std(img)
+        
+        contrast = (self.sigma / img_sigma)*2
+        brightness = (self.mu - img_mu)
+        
+        img = (img- 0.5) * contrast + 0.5 + brightness
+                
+        return torch.clip(img, 0, 1)
+        
     
 if __name__ == '__main__':
     # check if test image exist

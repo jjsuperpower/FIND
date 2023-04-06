@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-import io
+import cv2
 
 # set matplotlib to show images with black background
 # plt.style.use('dark_background')
@@ -247,3 +247,64 @@ def sample_imgs_list(x:DataLoader, samples:int|slice|list = slice(0,1)):
         return samples_sel
     else:
         raise ValueError('samples must be of type int or slice')
+    
+def bell_curve_hist(mu, sigma, num_pixels) -> np.ndarray:
+    t = np.arange(0, 256, dtype=np.float64)
+    bell = np.exp(-np.power(t - mu, 2.) / (2 * np.power(sigma, 2.))) * (1 / (sigma * np.sqrt(2 * np.pi)))
+    bell *= num_pixels / np.sum(bell)
+    bell = bell.astype(np.uint64)
+    
+    # this is imperfect, but the resulting histogram must have the number of pixels in the image
+    for i in range(0, int(num_pixels - np.sum(bell))):
+        bell[-i] += 1
+        
+    return bell
+
+
+class ImgUtils:
+    @staticmethod
+    def rgb_to_hsv(img:torch.Tensor):
+        img_type = img.dtype
+        img = torch.clip(img*255, 0, 255).type(torch.uint8)
+        img = img.permute(1, 2, 0)        # make channels last
+        img = img.cpu().numpy()
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+        img = torch.from_numpy(img)
+        img = img.permute(2, 0, 1)
+        img = img.type(img_type)
+        img = torch.clip(img/255, 0, 1)
+        return img
+    
+    @staticmethod
+    def hsv_to_rgb(img:torch.Tensor):
+        img_type = img.dtype
+        img = torch.clip(img*255, 0, 255).type(torch.uint8)
+        img = img.permute(1, 2, 0)        # make channels last
+        img = img.cpu().numpy()
+        img = cv2.cvtColor(img, cv2.COLOR_HSV2RGB)
+        img = torch.from_numpy(img)
+        img = img.permute(2, 0, 1)
+        img = img.type(img_type)
+        img = torch.clip(img/255, 0, 1)
+        return img
+    
+    @staticmethod
+    def img_to_hist(img:torch.Tensor) -> torch.Tensor:
+        ''' Note: the image must be in the range [0, 255]
+        not [0, 1] and have one channel'''
+        
+        # check for three dimensions
+        if len(img.shape) >= 3:
+            if img.shape[0] != 1:
+                raise ValueError('img must be grayscale')
+            img = img.squeeze()
+        
+        img = torch.clip(img, 0, 255).type(torch.uint8)
+        hist = torch.zeros(256, dtype=np.uint64)
+        for x in range(img.shape[0]):
+            for y in range(img.shape[1]):
+                hist[img[x, y]] += 1
+        return hist
+    
+    def get_dist(img:torch.Tensor):
+        return torch.mean(img), torch.std(img)

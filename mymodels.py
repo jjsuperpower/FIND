@@ -7,7 +7,7 @@ import torchmetrics
 import os
 from copy import deepcopy
 
-from transforms import Luminance, Hist_EQ, Brightness_Contrast, Retinex, Blur
+from transforms import Luminance, Hist_EQ, Brightness_Contrast, Retinex, Blur, HistRemap, DistRemap
 from coco_ds import CocoDataset
 
 class Model_Wrapper(pl.LightningModule):
@@ -46,7 +46,7 @@ class Model_Wrapper(pl.LightningModule):
             self.log('Top 1 Acc %', acc1*100)
             self.log('Top 5 Acc %', acc5*100)
             self.log('Confidence %', conf*100)
-            self.log('Loss', loss)
+            # self.log('Loss', loss)
             
         elif self.model_type == 'yolo':          
             ids, imgs, orig_sizes = batch
@@ -144,6 +144,14 @@ class Preprocess():
     
     def retinex(self, *args, **kwargs):
         self.current_trans += [Retinex(*args, **kwargs)]
+        return self
+    
+    def hist_remap(self, *args, **kwargs):
+        self.current_trans += [HistRemap(*args, **kwargs)]
+        return self
+    
+    def dist_remap(self, *args, **kwargs):
+        self.current_trans += [DistRemap(*args, **kwargs)]
         return self
         
     def get_loader(self):
