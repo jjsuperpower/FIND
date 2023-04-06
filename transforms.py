@@ -208,18 +208,23 @@ class HistRemap():
 class DistRemap:
     ''' Transform for remapping images to a target distribution '''
     
-    def __init__(self, mu:torch.Tensor, sigma:torch.Tensor):
+    def __init__(self, mu:torch.Tensor=None, sigma:torch.Tensor=None):
         self.mu = mu
         self.sigma = sigma
         
     def __call__(self, img:torch.TensorType) -> torch.Tensor:
         ''' Mu and sigma are in range [0, 1]'''
-        img_mu, img_sigma = torch.mean(img), torch.std(img)
+        img_mu, img_sigma = ImgUtils.get_mean_std(img)
         
-        contrast = (self.sigma / img_sigma)*2
+        if self.mu is None:
+            self.mu = img_mu
+        if self.sigma is None:
+            self.sigma = img_sigma
+        
         brightness = (self.mu - img_mu)
+        contrast = self.sigma / img_sigma
         
-        img = (img- 0.5) * contrast + 0.5 + brightness
+        img = (img - 0.5) * contrast + 0.5 + brightness
                 
         return torch.clip(img, 0, 1)
         

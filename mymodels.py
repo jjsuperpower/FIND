@@ -9,6 +9,7 @@ from copy import deepcopy
 
 from transforms import Luminance, Hist_EQ, Brightness_Contrast, Retinex, Blur, HistRemap, DistRemap
 from coco_ds import CocoDataset
+from myutils import ImgUtils
 
 class Model_Wrapper(pl.LightningModule):
     def __init__(self, model, model_type='class', scale=1.0):
@@ -64,8 +65,18 @@ class Model_Wrapper(pl.LightningModule):
         else:
             raise NotImplementedError
 
-        self.log('Pixel Val STD', torch.std(imgs) * 255)
-        self.log('Pixel Val MEAN', torch.mean(imgs) * 255)
+        # mus = torch.zeros(imgs.size()[0:2])
+        # sigmas = torch.zeros(imgs.size()[0:2])
+        
+        # for i in range(imgs.size(0)):
+        #     for j in range(imgs.size(1)):
+        #         mus[i,j] = torch.mean(imgs[i,j])
+        #         sigmas[i,j] = torch.std(imgs[i,j])
+        
+        mu, sigma = ImgUtils.get_mean_std(imgs)
+      
+        self.log('Pixel Val MEAN', mu * 255)
+        self.log('Pixel Val STD', sigma * 255)
         # self.log('Loss', loss)get_loader()
         
     def plot(self, *args, **kwargs):

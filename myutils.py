@@ -12,24 +12,24 @@ class Void(object):
         pass
 
 class View:
-    @staticmethod
-    def show_random_color(x, num_to_show):
-        plt.figure(figsize=(6,2))
-        for i in range(num_to_show):
-            ax = plt.subplot(1, num_to_show, i + 1)
-            plt.imshow(x[np.random.random_integers(0,x.shape[0])])
-            ax.get_xaxis().set_visible(False)
-            ax.get_yaxis().set_visible(False)
-        plt.show()
+    # @staticmethod
+    # def show_random_color(x, num_to_show):
+    #     plt.figure(figsize=(6,2))
+    #     for i in range(num_to_show):
+    #         ax = plt.subplot(1, num_to_show, i + 1)
+    #         plt.imshow(x[np.random.random_integers(0,x.shape[0])])
+    #         ax.get_xaxis().set_visible(False)
+    #         ax.get_yaxis().set_visible(False)
+    #     plt.show()
 
-    def show_all_color(x):
-        plt.figure()
-        for i in range(len(x)):
-            ax = plt.subplot(1, x.shape[0], i + 1)
-            plt.imshow(x[i])
-            ax.get_xaxis().set_visible(False)
-            ax.get_yaxis().set_visible(False)
-        plt.show()
+    # def show_all_color(x):
+    #     plt.figure()
+    #     for i in range(len(x)):
+    #         ax = plt.subplot(1, x.shape[0], i + 1)
+    #         plt.imshow(x[i])
+    #         ax.get_xaxis().set_visible(False)
+    #         ax.get_yaxis().set_visible(False)
+    #     plt.show()
         
     @staticmethod
     def chan_f2l(array:np.ndarray) -> np.ndarray:
@@ -306,5 +306,15 @@ class ImgUtils:
                 hist[img[x, y]] += 1
         return hist
     
-    def get_dist(img:torch.Tensor):
-        return torch.mean(img), torch.std(img)
+    @staticmethod
+    def get_mean_std(img:torch.Tensor):       
+        if img.dim() == 2:
+            img = img.unsqueeze(0)
+        if img.dim() == 3:
+            img = img.unsqueeze(0)
+            
+        gray = torch.mean(img.clone(), dim=1)      # convert to grayscale            
+        sigmas = torch.std(gray, dim=(1,2))      # get deviation of each grayscale image
+        mus = torch.mean(gray, dim=0)        # get mean of each grayscale image
+        
+        return torch.mean(mus), torch.mean(sigmas)  # return the average of the means and deviations
