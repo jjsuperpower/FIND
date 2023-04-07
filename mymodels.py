@@ -7,7 +7,7 @@ import torchmetrics
 import os
 from copy import deepcopy
 
-from transforms import Luminance, Hist_EQ, Brightness_Contrast, Retinex, Blur, HistRemap, DistRemap
+from transforms import Luminance, Hist_EQ, Brightness_Contrast, Retinex, Blur, HistRemap, DistRemap, Fog, Rain
 from coco_ds import CocoDataset
 from myutils import ImgUtils
 
@@ -137,8 +137,8 @@ class Preprocess():
         self.current_trans += [Luminance(factor)]
         return self
     
-    def brightness_contrast(self, brightness, contrast):
-        self.current_trans += [Brightness_Contrast(brightness, contrast)]
+    def brightness_contrast(self, *args, **kwargs):
+        self.current_trans += [Brightness_Contrast(*args, **kwargs)]
         return self
     
     def blur(self, kernel_size):
@@ -164,6 +164,15 @@ class Preprocess():
     def dist_remap(self, *args, **kwargs):
         self.current_trans += [DistRemap(*args, **kwargs)]
         return self
+    
+    def fog(self, *args, **kwargs):
+        self.current_trans += [Fog(*args, **kwargs)]
+        return self
+        
+    def rain(self, *args, **kwargs):
+        self.current_trans += [Rain(*args, **kwargs)]
+        return self
+        
         
     def get_loader(self):
         return DataLoader(self.get_dataset(), 

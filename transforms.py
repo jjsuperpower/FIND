@@ -19,12 +19,19 @@ class Luminance(object):
         return self.__class__.__name__ + f'(factor={self.factor})'
     
 class Brightness_Contrast(object):
-    def __init__(self, brighness:float = 0, contrast:float = 1):
+    def __init__(self, brighness:float = 0, contrast:float = 1, no_clip:bool = False):
         self.brightness = brighness
         self.contrast = contrast
+        self.no_clip = no_clip
     
     def __call__(self, img:torch.Tensor):
         img = self.contrast*(img - 0.5) + 0.5 + self.brightness
+        
+        if self.no_clip:
+            if img.min() < 0:
+                img = img - img.min()
+            img = img / img.max()
+            
         return torch.clip(img, 0, 1)
     
     def __repr__(self) -> str:
@@ -208,9 +215,10 @@ class HistRemap():
 class DistRemap:
     ''' Transform for remapping images to a target distribution '''
     
-    def __init__(self, mu:torch.Tensor=None, sigma:torch.Tensor=None):
+    def __init__(self, mu:torch.Tensor=None, sigma:torch.Tensor=None, no_clip:bool=False):
         self.mu = mu
         self.sigma = sigma
+        self.no_clip = no_clip
         
     def __call__(self, img:torch.TensorType) -> torch.Tensor:
         ''' Mu and sigma are in range [0, 1]'''
@@ -225,8 +233,55 @@ class DistRemap:
         contrast = self.sigma / img_sigma
         
         img = (img - 0.5) * contrast + 0.5 + brightness
-                
+        
+        if self.no_clip:
+            if img.min() < 0:
+                img = img - img.min()
+            img = img / img.max()
+            
         return torch.clip(img, 0, 1)
+    
+class Fog():
+    def __init__(self, level:int):
+        self.level = level
+        self.bc = Brightness_Contrast(abs(level), 1, no_clip=True)
+        
+    def __call__(self, img:torch.Tensor):
+        if self.level < 0:
+            img = -img + 1
+            img = self.bc(img)
+            img = -img + 1
+            
+        else:
+            img = self.bc(img)
+            
+        return img
+    
+    def __repr__(self):
+        return self.__class__.__name__ + f'(level={self.level})'
+    
+    
+class Rain():
+    def __init__(self, level:int, threshold:float=80):
+        self.level = level
+        self.threshold = threshold
+        self.fog = Fog(-level)
+        
+    def __call__(self, img:torch.Tensor):
+        
+        # convert to hsv
+        img = ImgUtils.rgb_to_hsv(img)
+        v_chan = img[2,...]
+        img = ImgUtils.hsv_to_rgb(img)
+        keep_pixels = torch.nonzero(v_chan > (self.threshold / 100))
+        
+        new_img = self.fog(img.clone())
+        new_img[:, keep_pixels[:, 0], keep_pixels[:, 1]] = img[:, keep_pixels[:, 0], keep_pixels[:, 1]]
+        
+        return torch.clip(new_img, 0, 1)        # remove negative zero
+    
+    def __repr__(self):
+        return self.__class__.__name__ + f'(level={self.level})'
         
     
 if __name__ == '__main__':
