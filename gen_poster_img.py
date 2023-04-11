@@ -18,14 +18,14 @@ img_enhance_names = ['histeq', 'retinex']
 
 
 # Save original image
-img_orig.save(SAVE_PATH + 'original.png')
+tf.ToPILImage()(img_orig_tensor).save(SAVE_PATH + 'original.png')
 
 for i, effect in enumerate(img_effects):
-    img = effect(img_orig_tensor)
-    img_pil = tf.ToPILImage()(img)
+    img_augmented = effect(img_orig_tensor)
+    img_pil = tf.ToPILImage()(img_augmented)
     img_pil.save(SAVE_PATH + f'{img_effects_names[i]}.png')
     
     for j, enh in enumerate(img_enhance):
-        img = enh(img)
-        img_pil = tf.ToPILImage()(img)
+        img_enh = enh(img_augmented)
+        img_pil = tf.ToPILImage()(img_enh)
         img_pil.save(SAVE_PATH + f'{img_effects_names[i]}_{img_enhance_names[j]}.png')
