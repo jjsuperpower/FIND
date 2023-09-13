@@ -8,12 +8,12 @@ SAVE_PATH = 'images/poster_imgs/'
 IMG_FILENAME = 'images/ILSVRC2012_val_00033521.JPEG'
 img_orig = Image.open(IMG_FILENAME)
 
-img_orig_tensor = tf.ToTensor()(tf.Resize((640,640))(img_orig))
+img_orig_tensor = tf.ToTensor()(tf.Resize((350, 650))(img_orig))
 
 img_effects = [Luminance(1/8), Luminance(2), Fog(10), Rain(2, 75)]
 img_effects_names = ['dark', 'overexposed', 'foggy', 'darkrainy']
 
-img_enhance = [Hist_EQ(), Retinex('SSR', 100)]
+img_enhance = [Hist_EQ(), Retinex('SSR', 400)]
 img_enhance_names = ['histeq', 'retinex']
 
 
