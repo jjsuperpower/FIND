@@ -21,6 +21,9 @@ class Model_Wrapper(pl.LightningModule):
         
     def forward(self, x):
         return self.model(x*self.scale)
+    
+    def eval(self):
+        pass
 
     # def training_step(self, batch, batch_idx):
     #     x, y = batch
@@ -74,7 +77,7 @@ class Model_Wrapper(pl.LightningModule):
         #         sigmas[i,j] = torch.std(imgs[i,j])
         
         mu, sigma = ImgUtils.get_mean_std(imgs)
-      
+    
         self.log('Pixel Val MEAN', mu * 255)
         self.log('Pixel Val STD', sigma * 255)
         # self.log('Loss', loss)get_loader()

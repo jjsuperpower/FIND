@@ -4,3 +4,5 @@ __pycache__/
 *.pth
 runs/
 datasets/
+debug.py 
+testing.py

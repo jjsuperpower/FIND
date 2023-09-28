@@ -1,27 +1,31 @@
 import torch
 from ultralytics import YOLO
+# from ultralytics.models import yolo
 from copy import deepcopy
 import numpy as np
-from ultralytics.yolo.utils.ops import coco80_to_coco91_class
+from ultralytics.data.converter import coco80_to_coco91_class
 
 from coco_ds import CocoResults
 
 
 COCO_80_TO_91 = coco80_to_coco91_class()
 
-class YOLOv8_COCO_Wrapper(YOLO):
+class YOLO_COCO_Wrapper():
     ''' Wrapper for YOLOv8 and COCO Dataset
     This used to add a layer of work arounds for using Tensors instead of PIL images.
     At the time of writing (April 2023), Yolov8 is new and has some bugs.
     If you are using this in the future, you may not need this class.'''
     
     def __init__(self, coco_evaluator:CocoResults, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        self.model = YOLO(*args, **kwargs)
         self.coco_evaluator = coco_evaluator
         
     def reset_coco_evaluator(self):
         self.coco_evaluator.reset()
         return self
+    
+    def eval(self):
+        self.model.eval()     
         
         
     def predict_coco(self, img_ids:int|list, imgs:torch.Tensor, orig_size:list[tuple[int,int]], gen_plot:bool=False):
@@ -33,7 +37,7 @@ class YOLOv8_COCO_Wrapper(YOLO):
             orig_size = [orig_size]
         
         img_size = imgs.size()[-2:]
-        results = self.predict(imgs*255)
+        results = self.model.predict(imgs)
         
         for idx, result in enumerate(results):
             result = deepcopy(result)
@@ -71,7 +75,7 @@ class YOLOv8_COCO_Wrapper(YOLO):
     def plot(self, imgs:torch.Tensor, results:list[dict]=None):
         
         if results is None:
-            results = self.predict(imgs*255)
+            results = self.model.predict(imgs)
             
         plots = torch.empty_like(imgs)
             
@@ -94,7 +98,6 @@ class YOLOv8_COCO_Wrapper(YOLO):
     def __call__(self, *args, **kwargs):
         return self.predict_coco(*args, **kwargs)
             
-        
-        
+    
         
         
