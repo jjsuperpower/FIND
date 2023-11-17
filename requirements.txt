@@ -6,3 +6,4 @@ matplotlib
 numpy
 ultralytics
 pycocotools
+opencv-python
