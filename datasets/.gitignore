@@ -1,0 +1,5 @@
+**/**
+
+# Git should ignore all files except the ones listed below
+!README.md
+!.gitignore

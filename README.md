@@ -54,33 +54,42 @@ This framework utilizes PyTorch, Torch Lightning, Torch Vision, Utralytics YOLO,
 ------
 
 ## Getting Started
-First create a python virtual environment (not required but recommended) and source it
+
+1. Clone the repo
+```bash
+git clone https://github.com/jjsuperpower/FIND.git
+```
+
+2. Setup datasets directory (see [datasets/README.md](./datasets/README.md#-Setting-Up-Datasets) for more details)
+
+
+3. Create a python virtual environment (not required but recommended).
 ```bash
 python3 -m venv venv
+echo "export PYTHONPATH=$PYTHONPATH:$(pwd)" >> venv/bin/activate
+```
+
+4. Source the environment and set python path (this must be done every time you open a new terminal)
+```bash
 source venv/bin/activate
 ```
 
-Clone the repo
-```bash
-git clone https://github.com/jjsuperpower/retinex.git
-```
-
-Next, get and initialize submodules
+5. Get and initialize submodules
 ```bash
 git submodule update --init --recursive
 ```
 
-Install the requirements
+6. Install the requirements
 ```bash
 pip install -r requirements.txt
 ```
 
-If you plan to use jupyter notebooks run tests, you need to make sure it is installed. If you have not installed it, you can install it with
+7. If you plan to use jupyter notebooks run tests, you need to make sure it is installed. If you have not installed it, you can install it with
 ```bash
 pip3 install notebook
 ```
 
-You can test if everything is setup correctly by running an example jupyter notebook.
+8. You can test if everything is setup correctly by running an example jupyter notebook.
 ```bash
 jupyter notebook examples/test_resnet18.ipynb
 ```
@@ -90,7 +99,7 @@ jupyter notebook examples/test_resnet18.ipynb
 ## List of files
 ```
 📦FIND
- ┣ 📂doc - Photos used for documentation
+ ┣ 📂doc        - Photos used for documentation
  ┣ 📂examples   - Nearly all the examples are identical but just test different models
  ┣ 📂retinex    - Created by git submodule init
  ┣ 📂src        - Location source code
