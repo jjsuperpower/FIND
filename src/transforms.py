@@ -86,7 +86,7 @@ class AHE():
 class Retinex():
     def __init__(self, algorithm:str, *args, **kwargs):
         # check of retinex folder exists
-        if not os.path.exists('retinex'):
+        if not os.path.exists('../retinex'):
             print('retinex submodule not found')
             print('Please run `git submodule update --init --recursive` to download retinex')
             raise FileNotFoundError('retinex folder not found')
