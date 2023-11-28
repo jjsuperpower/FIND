@@ -5,7 +5,7 @@ from copy import deepcopy
 import numpy as np
 from ultralytics.data.converter import coco80_to_coco91_class
 
-from coco_ds import CocoResults
+from .coco_ds import CocoResults
 
 
 COCO_80_TO_91 = coco80_to_coco91_class()

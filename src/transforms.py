@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image
 import os
 
-from myutils import View, ImgUtils
+from .myutils import View, ImgUtils
 
 class Luminance(object):
     def __init__(self, factor:float = 1):

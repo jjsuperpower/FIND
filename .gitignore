@@ -7,3 +7,4 @@ debug.py
 testing.py
 .vscode/
 venv/
+**.ipynb_checkpoints

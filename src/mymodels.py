@@ -7,9 +7,9 @@ import torchmetrics
 import os
 from copy import deepcopy
 
-from transforms import Luminance, Hist_EQ, Brightness_Contrast, Retinex, Blur, HistRemap, DistRemap, Fog, Rain
-from coco_ds import CocoDataset
-from myutils import ImgUtils
+from .transforms import Luminance, Hist_EQ, Brightness_Contrast, Retinex, Blur, HistRemap, DistRemap, Fog, Rain
+from .coco_ds import CocoDataset
+from .myutils import ImgUtils
 
 class Model_Wrapper(pl.LightningModule):
     def __init__(self, model, model_type='class', scale=1.0):

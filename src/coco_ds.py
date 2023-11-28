@@ -8,7 +8,7 @@ import contextlib
 from copy import deepcopy
 import json
 
-from myutils import Void
+from .myutils import Void
 
 COCO_classes = [
     "background", "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat", 
