@@ -36,14 +36,10 @@ class Model_Wrapper(pl.LightningModule):
             imgs, y = batch
             y_hat = self(imgs)
             
-            acc1 = torchmetrics.functional.accuracy(y_hat, y, top_k=1)
-            acc5 = torchmetrics.functional.accuracy(y_hat, y, top_k=5)
-            conf = torch.mean(torch.max(F.softmax(y_hat, dim=1), dim=1).values)
-            loss = F.cross_entropy(y_hat, y)
-        
+            num_classes = y_hat.size(1)
+            acc1 = torchmetrics.functional.accuracy(y_hat, y, top_k=1, task='multiclass', num_classes=num_classes)
+            acc5 = torchmetrics.functional.accuracy(y_hat, y, top_k=5, task='multiclass', num_classes=num_classes)
             
-            acc1 = torchmetrics.functional.accuracy(y_hat, y, top_k=1)
-            acc5 = torchmetrics.functional.accuracy(y_hat, y, top_k=5)
             conf = torch.mean(torch.max(F.softmax(y_hat, dim=1), dim=1).values)
             loss = F.cross_entropy(y_hat, y)
             
