@@ -1,0 +1,12 @@
+# Modeled after cargo.lock
+# The purpose of this file is to record versions of dependencies that have been tested to work with the project.
+
+torch                     2.1.1
+torchmetrics              1.2.0
+torchvision               0.16.1
+lightning                 2.1.2
+matplotlib                3.8.2
+numpy                     1.26.2
+ultralytics               8.0.219
+pycocotools               2.0.7
+opencv-python             4.8.1.78
