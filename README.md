@@ -81,7 +81,7 @@ git submodule update --init --recursive
 
 6. Install the requirements
 ```bash
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 7. If you plan to use jupyter notebooks run tests, you need to make sure it is installed. If you have not installed it, you can install it with
@@ -91,7 +91,7 @@ pip3 install notebook
 
 8. You can test if everything is setup correctly by running an example jupyter notebook.
 ```bash
-jupyter notebook examples/test_resnet18.ipynb
+jupyter notebook ./examples
 ```
 
 ----
