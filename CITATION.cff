@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Sanderson"
+  given-names: "Jonathan"
+- family-names: "Hasan"
+  given-names: "Syed"
+title: "FIND"
+version: 1.1
+doi: 
+date-released: 2023-12-18
+url: "https://github.com/jjsuperpower/FIND"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Sanderson"
+    given-names: "Jonathan"
+  - family-names: "Hasan"
+    given-names: "Syed"
+  doi:  10.48550/arXiv.2312.09509
+  title: "A Case Study of Image Enhancement Algorithms' Effectiveness of Improving Neural Networks' Performance on Adverse Images"
+  year: 2023
