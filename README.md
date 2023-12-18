@@ -96,7 +96,7 @@ jupyter notebook ./examples
 
 ----
 
-## List of files
+### List of files
 ```
 📦FIND
  ┣ 📂doc        - Photos used for documentation
@@ -116,3 +116,14 @@ jupyter notebook ./examples
  ┗ 📜requirements.txt    - Dependencies
 ```
 
+## How To Cite
+```biblatex
+@misc{sanderson2023case,
+      title={A Case Study of Image Enhancement Algorithms' Effectiveness of Improving Neural Networks' Performance on Adverse Images}, 
+      author={Jonathan Sanderson and Syed Rafay Hasan},
+      year={2023},
+      eprint={2312.09509},
+      archivePrefix={arXiv},
+      primaryClass={eess.IV}
+}
+```
